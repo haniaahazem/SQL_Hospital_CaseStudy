@@ -5,7 +5,7 @@ SQL analysis of a hospital database covering patient visits, doctors, department
 
 ## Database Schema
 
-![ERD](erd.png)
+![ERD](database_diagram.png)
 
 | Table | Description |
 |---|---|
