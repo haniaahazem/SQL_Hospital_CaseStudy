@@ -121,3 +121,122 @@ SELECT totaldio,
        dia
 FROM cte_rank
 WHERE rankk=1;
+
+#Q11: For each doctor, show their monthly revenue and a 3-month moving average
+SELECT *,
+       avg(revenuebydoc) OVER (PARTITION BY docid
+                               ORDER BY MONTH ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS 3monthmovingavg
+FROM
+  (SELECT d.doctorid AS docid,
+          concat(d.firstname, " ", d.lastname) AS fulldocname,
+          DATE_FORMAT(pv.visitdate, '%Y-%m') AS MONTH,
+          sum(billamount-InsuranceAmount) AS revenuebydoc
+   FROM patientvisits pv
+   JOIN dim_doctor d ON d.doctorid=pv.DoctorID
+   GROUP BY docid,
+            fulldocname,
+            MONTH
+   ORDER BY MONTH) m;
+
+#Q12: Rank patients by total spending, show top 5 spenders per city
+WITH cte_cityrank AS
+  (SELECT *,
+          rank() OVER (PARTITION BY city
+                       ORDER BY spending DESC) AS cityrank
+   FROM
+     (SELECT sum(pv.billamount-pv.insuranceamount) AS spending,
+             pv.PatientID AS patientid,
+             p.city AS city
+      FROM patientvisits pv
+      JOIN dim_patient_clean p ON p.PatientID=pv.PatientID
+      GROUP BY PatientID,
+               city)m)
+SELECT *
+FROM cte_cityrank
+WHERE cityrank<=5;
+
+#Q13: For each department, show each month’s visits and the difference from the previous month
+SELECT *,
+       sum(totalvisits) OVER (PARTITION BY departmentid
+                              ORDER BY MONTH) AS runningsum,
+       totalvisits - lag (totalvisits) over(PARTITION BY departmentid
+                                            ORDER BY MONTH) AS diff
+FROM
+  (SELECT DATE_FORMAT(visitdate, '%Y-%m') AS MONTH,
+          count(visitid) AS totalvisits,
+          departmentid
+   FROM patientvisits
+   GROUP BY MONTH,
+            departmentid
+   ORDER BY MONTH,
+            departmentid)m;
+
+#Q14: Show each doctor’s contribution to total revenue as a percentage of overall revenue
+SELECT CAST((SUM(pv.billamount - pv.insuranceamount) /
+               (SELECT SUM(billamount - insuranceamount)
+                FROM patientvisits)) * 100 AS DECIMAL (10, 2)) AS revenuepercentage,
+       d.doctorid AS id,
+       concat(d.firstname, " ", d.lastname) AS fulldocname
+FROM patientvisits pv
+JOIN dim_doctor d ON d.DoctorID=pv.DoctorID
+GROUP BY id,
+         fulldocname;
+
+#Q15: Find patients who visited more than one department
+SELECT COUNT(DISTINCT pv.DepartmentID) AS countdep,
+       pv.patientid,
+       p.fullname
+FROM patientvisits pv
+JOIN dim_patient_clean p ON p.PatientID=pv.PatientID
+GROUP BY PatientID,
+         p.fullname
+HAVING countdep > 1
+ORDER BY countdep DESC;
+
+#Q16: List patients who were treated by the same doctor more than 2 times
+SELECT count(d.doctorid) AS countdoc,
+       d.doctorid,
+       p.patientid,
+       concat(d.firstname, " ", d.lastname) AS fulldocname,
+       p.fullname
+FROM patientvisits pv
+JOIN dim_patient_clean p ON p.PatientID=pv.PatientID
+JOIN dim_doctor d ON d.DoctorID=pv.DoctorID
+GROUP BY patientid,
+         doctorid
+HAVING countdoc>2
+ORDER BY countdoc DESC;
+
+#Q17: Find departments whose average satisfaction score IS above the overall average
+SELECT AVG (satisfactionscore) AS avgscore,
+           departmentid
+FROM patientvisits
+GROUP BY departmentid
+HAVING avg(SatisfactionScore) >
+  (SELECT avg(satisfactionscore)
+   FROM patientvisits) ;
+
+#Q18: Find The 10 least common combinations that appear IN LESS THAN 1% OF ALL visits
+SELECT count(*)AS combination,
+       count(*)*100/
+  (SELECT COUNT(*)
+   FROM patientvisits) AS percentage,
+       treatmentid,
+       diagnosisid
+FROM patientvisits
+GROUP BY treatmentid,
+         diagnosisid
+HAVING percentage<1
+ORDER BY combination ASC
+LIMIT 10;
+
+#Q24: SHOW MONTH OVER MONTH revenue growth rate AS a percentage #with cte
+SELECT *,
+       cast((revenue-lag(revenue)over(
+                                      ORDER BY MONTH))*100/ lag(revenue) OVER (
+                                                                               ORDER BY MONTH) AS decimal(10, 2)) AS growthratepercentage
+FROM
+  (SELECT sum(billamount-insuranceamount) AS revenue,
+          date_format(visitdate, '%Y-%m') AS MONTH
+   FROM patientvisits
+   GROUP BY MONTH)m ;
