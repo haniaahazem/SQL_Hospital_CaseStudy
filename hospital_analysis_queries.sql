@@ -230,7 +230,7 @@ HAVING percentage<1
 ORDER BY combination ASC
 LIMIT 10;
 
-#Q24: SHOW MONTH OVER MONTH revenue growth rate AS a percentage #with cte
+#Q19: SHOW MONTH OVER MONTH revenue growth rate AS a percentage #with cte
 SELECT *,
        cast((revenue-lag(revenue)over(
                                       ORDER BY MONTH))*100/ lag(revenue) OVER (
