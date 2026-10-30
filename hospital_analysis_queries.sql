@@ -100,27 +100,27 @@ GROUP BY doctorid
 HAVING totaldocvisits>=100
 ORDER BY avgg DESC;
 
-#Q10 Identify the most commonly prescribed treatment for each diagnosis. 
-WITH cte_rank AS
-  (SELECT totaldio,
-          TREAT,
-          dia,
-          rank() OVER (PARTITION BY dia
-                       ORDER BY totaldio DESC) AS rankk
-   FROM
-     (SELECT count(dd.DiagnosisID) AS totaldio,
-             dt.Treatmentname AS TREAT,
-             dd.Diagnosisname AS dia
-      FROM patientvisits pv
-      JOIN dim_diagnosis dd ON dd.diagnosisid=pv.diagnosisid
-      JOIN dim_treatment dt ON dt.TreatmentID=pv.TreatmentID
-      GROUP BY TREAT,
-               dia)m)
-SELECT totaldio,
-       TREAT,
-       dia
-FROM cte_rank
-WHERE rankk=1;
+#-Q10. Identify the most commonly prescribed treatment for each diagnosis.
+with cte_rank as (
+	select totaldiagnosis,
+			treatment,
+			diagnosis,
+			rank() over (partition by diagnosis order by totaldiagnosis desc) as rankk
+	from (
+		select count(dd.DiagnosisID) as totaldiagnosis,
+				dt.Treatmentname as treatment, 
+				dd.Diagnosisname as diagnosis
+		from patientvisits pv
+		join dim_diagnosis dd on dd.diagnosisid=pv.diagnosisid
+		join dim_treatment dt on dt.TreatmentID=pv.TreatmentID
+		group by treatment, diagnosis
+		)m)
+
+select totaldiagnosis,
+		treatment,
+		diagnosis
+from cte_rank
+where rankk=1;
 
 #Q11: For each doctor, show their monthly revenue and a 3-month moving average
 SELECT *,
