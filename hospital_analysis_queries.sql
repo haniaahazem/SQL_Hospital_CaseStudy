@@ -242,3 +242,21 @@ FROM
           date_format(visitdate, '%Y-%m') AS MONTH
    FROM patientvisits
    GROUP BY MONTH)m ;
+
+#Q22: Which three cities generate the most net revenue after insurance deductions break down by payment method
+WITH cte_rank AS
+  (SELECT *,
+          rank() OVER (PARTITION BY PayMethod
+                       ORDER BY netrevenue DESC) AS cityrank
+   FROM
+     (SELECT sum(pv.billamount-pv.InsuranceAmount) AS netrevenue,
+             p.city AS city,
+             pm.PaymentMethod AS paymethod
+      FROM patientvisits pv
+      JOIN dim_patient_clean p ON p.PatientID=pv.PatientID
+      JOIN dim_paymentmethod pm ON pm.PaymentMethodID=pv.PaymentMethodID
+      GROUP BY city,
+               paymethod) m)
+SELECT *
+FROM cte_rank
+WHERE cityrank<=3;
