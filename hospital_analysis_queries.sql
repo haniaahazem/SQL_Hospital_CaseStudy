@@ -17,7 +17,8 @@ FROM patientvisits pv
 JOIN dim_paymentmethod pm ON pm.paymentmethodid=pv.PaymentMethodID
 GROUP BY paymentmethod;
 
-#--Q3. Categorize patients INTO age groups AND calculate the average bill amount FOR EACH age band.(Assume age AT TIME OF visit based ON VisitDate.) WITH patientsage AS
+#--Q3. Categorize patients INTO age groups AND calculate the average bill amount FOR EACH age band.(Assume age AT TIME OF visit based ON VisitDate.) 
+WITH patientsage AS
   (SELECT pv.visitid,
           pc.patientid,
           pv.billamount AS revenue,
@@ -230,11 +231,12 @@ HAVING percentage<1
 ORDER BY combination ASC
 LIMIT 10;
 
-#Q19: SHOW MONTH OVER MONTH revenue growth rate AS a percentage #with cte
+#Q19: SHOW MONTH OVER MONTH revenue growth rate AS a percentage
 SELECT *,
        cast((revenue-lag(revenue)over(
                                       ORDER BY MONTH))*100/ lag(revenue) OVER (
-                                                                               ORDER BY MONTH) AS decimal(10, 2)) AS growthratepercentage
+                                      ORDER BY MONTH) AS decimal(10, 2))
+									  AS growthratepercentage
 FROM
   (SELECT sum(billamount-insuranceamount) AS revenue,
           date_format(visitdate, '%Y-%m') AS MONTH
