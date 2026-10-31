@@ -101,7 +101,7 @@ GROUP BY doctorid
 HAVING totaldocvisits>=100
 ORDER BY avgg DESC;
 
-#-Q10. Identify the most commonly prescribed treatment for each diagnosis.
+#--Q10. Identify the most commonly prescribed treatment for each diagnosis.
 with cte_rank as (
 	select totaldiagnosis,
 			treatment,
@@ -123,7 +123,7 @@ select totaldiagnosis,
 from cte_rank
 where rankk=1;
 
-#Q11: For each doctor, show their monthly revenue and a 3-month moving average
+#--Q11: For each doctor, show their monthly revenue and a 3-month moving average
 SELECT *,
        avg(revenuebydoc) OVER (PARTITION BY docid
                                ORDER BY MONTH ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS 3monthmovingavg
@@ -139,7 +139,7 @@ FROM
             MONTH
    ORDER BY MONTH) m;
 
-#Q12: Rank patients by total spending, show top 5 spenders per city
+#--Q12: Rank patients by total spending, show top 5 spenders per city
 WITH cte_cityrank AS
   (SELECT *,
           rank() OVER (PARTITION BY city
@@ -156,7 +156,7 @@ SELECT *
 FROM cte_cityrank
 WHERE cityrank<=5;
 
-#Q13: For each department, show each month’s visits and the difference from the previous month
+#--Q13: For each department, show each month’s visits and the difference from the previous month
 SELECT *,
        sum(totalvisits) OVER (PARTITION BY departmentid
                               ORDER BY MONTH) AS runningsum,
@@ -172,7 +172,7 @@ FROM
    ORDER BY MONTH,
             departmentid)m;
 
-#Q14: Show each doctor’s contribution to total revenue as a percentage of overall revenue
+#--Q14: Show each doctor’s contribution to total revenue as a percentage of overall revenue
 SELECT CAST((SUM(pv.billamount - pv.insuranceamount) /
                (SELECT SUM(billamount - insuranceamount)
                 FROM patientvisits)) * 100 AS DECIMAL (10, 2)) AS revenuepercentage,
@@ -183,7 +183,7 @@ JOIN dim_doctor d ON d.DoctorID=pv.DoctorID
 GROUP BY id,
          fulldocname;
 
-#Q15: Find patients who visited more than one department
+#Q--15: Find patients who visited more than one department
 SELECT COUNT(DISTINCT pv.DepartmentID) AS countdep,
        pv.patientid,
        p.fullname
@@ -194,7 +194,7 @@ GROUP BY PatientID,
 HAVING countdep > 1
 ORDER BY countdep DESC;
 
-#Q16: List patients who were treated by the same doctor more than 2 times
+#--Q16: List patients who were treated by the same doctor more than 2 times
 SELECT count(d.doctorid) AS countdoc,
        d.doctorid,
        p.patientid,
@@ -208,7 +208,7 @@ GROUP BY patientid,
 HAVING countdoc>2
 ORDER BY countdoc DESC;
 
-#Q17: Find departments whose average satisfaction score IS above the overall average
+#--Q17: Find departments whose average satisfaction score IS above the overall average
 SELECT AVG (satisfactionscore) AS avgscore,
            departmentid
 FROM patientvisits
@@ -217,7 +217,7 @@ HAVING avg(SatisfactionScore) >
   (SELECT avg(satisfactionscore)
    FROM patientvisits) ;
 
-#Q18: Find The 10 least common combinations that appear IN LESS THAN 1% OF ALL visits
+#--Q18: Find The 10 least common combinations that appear IN LESS THAN 1% OF ALL visits
 SELECT count(*)AS combination,
        count(*)*100/
   (SELECT COUNT(*)
@@ -231,7 +231,7 @@ HAVING percentage<1
 ORDER BY combination ASC
 LIMIT 10;
 
-#Q19: SHOW MONTH OVER MONTH revenue growth rate AS a percentage
+#--Q19: SHOW MONTH OVER MONTH revenue growth rate AS a percentage
 SELECT *,
        cast((revenue-lag(revenue)over(
                                       ORDER BY MONTH))*100/ lag(revenue) OVER (
@@ -243,7 +243,7 @@ FROM
    FROM patientvisits
    GROUP BY MONTH)m ;
 
-#Q22: Which three cities generate the most net revenue after insurance deductions break down by payment method
+#--Q20: Which three cities generate the most net revenue after insurance deductions break down by payment method
 WITH cte_rank AS
   (SELECT *,
           rank() OVER (PARTITION BY PayMethod
