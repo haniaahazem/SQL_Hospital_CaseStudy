@@ -1,13 +1,12 @@
 #--Q1. FOR EACH doctor, COUNT how many DISTINCT patients they have treated.
-SELECT count(DISTINCT pv.patientid) AS COUNT,
+SELECT count(DISTINCT pv.patientid) AS patientscount,
        d.DoctorID,
        concat(d.firstname, " ", d.lastname) AS fulldocname
 FROM patientvisits pv
 JOIN dim_doctor d ON pv.doctorid=d.doctorid
-JOIN dim_patient_clean pc ON pc.patientid=pv.patientid
 GROUP BY doctorid,
          fulldocname
-ORDER BY COUNT DESC;
+ORDER BY patientscount DESC;
 
 #--Q2. SHOW the revenue SPLIT BY EACH payment METHOD, along WITH total visits.
 SELECT sum(pv.billamount) AS revenue,
@@ -47,7 +46,7 @@ GROUP BY dname;
 #--Q5. Rank departments based ON their total revenue within EACH department category.
 SELECT *,
        rank() OVER (PARTITION BY dcategory
-                    ORDER BY revenue DESC)
+                    ORDER BY revenue DESC) as deprank
 FROM
   (SELECT cast(sum(billamount) AS decimal(18, 2)) AS revenue,
           d.departmentname AS dname,
@@ -79,7 +78,7 @@ FROM
    FROM patientvisits) m
 GROUP BY weekdays;
 
-#--Q8. FOR EACH MONTH, calculate total visits AND a running cumulative total OF vis
+#--Q8. FOR EACH MONTH, calculate total visits AND a running cumulative total OF visits
 SELECT visitmonth,
        totalvisits,
        sum(totalvisits) OVER (
@@ -126,7 +125,7 @@ where rankk=1;
 #--Q11: For each doctor, show their monthly revenue and a 3-month moving average
 SELECT *,
        avg(revenuebydoc) OVER (PARTITION BY docid
-                               ORDER BY MONTH ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS 3monthmovingavg
+                               ORDER BY MONTH ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS threemonthmovingavg
 FROM
   (SELECT d.doctorid AS docid,
           concat(d.firstname, " ", d.lastname) AS fulldocname,
