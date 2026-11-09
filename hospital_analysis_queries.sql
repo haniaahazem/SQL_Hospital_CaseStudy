@@ -65,24 +65,21 @@ JOIN dim_department_clean d ON d.departmentid=pv.departmentid
 GROUP BY dname
 ORDER BY avgscore DESC;
 
-#--Q7. Compare the total number OF hospital visits ON weekdays vs weekends.
-SELECT count(visitid) AS totalvisits,
-       weekdays
-FROM
-  (SELECT visitid,
-          CASE
-              WHEN date_format(visitdate, '%W') IN ('Sunday',
-                                                    'Saturday') THEN 'weekend'
-              ELSE "weekday"
-          END AS "weekdays"
-   FROM patientvisits) m
-GROUP BY weekdays;
+-- Q7: Compare the total number of hospital visits on weekdays vs. weekends.
+SELECT
+    CASE
+        WHEN DAYOFWEEK(visitdate) IN (1, 7) THEN 'Weekend'
+        ELSE 'Weekday'
+    END AS day_type,
+    COUNT(*) AS total_visits
+FROM patientvisits
+GROUP BY day_type
+ORDER BY day_type;
 
 #--Q8. FOR EACH MONTH, calculate total visits AND a running cumulative total OF visits
 SELECT visitmonth,
        totalvisits,
-       sum(totalvisits) OVER (
-                              ORDER BY visitmonth) AS runningvisits
+       sum(totalvisits) OVER (ORDER BY visitmonth) AS runningvisits
 FROM
   (SELECT count(visitid) AS totalvisits,
           date_format(visitdate, '%Y-%m') AS visitmonth
