@@ -216,17 +216,19 @@ HAVING avg(SatisfactionScore) >
   (SELECT avg(satisfactionscore)
    FROM patientvisits) ;
 
-#--Q18: Find The 10 least common combinations that appear IN LESS THAN 1% OF ALL visits
-SELECT count(*)AS combination,
-       count(*)*100/
-  (SELECT COUNT(*)
-   FROM patientvisits) AS percentage,
-       treatmentid,
-       diagnosisid
-FROM patientvisits
-GROUP BY treatmentid,
-         diagnosisid
-HAVING percentage<1
+#--Q18: Find the 10 least common combinations that appear in less than 1% of all visits
+SELECT COUNT(*) AS combination,
+       COUNT(*) * 100.0 / (SELECT COUNT(*) FROM patientvisits)  AS percentage,
+       dt.TreatmentName AS treatment,
+       dd.DiagnosisName AS diagnosis
+FROM patientvisits pv
+JOIN dim_treatment dt ON dt.TreatmentID = pv.TreatmentID
+JOIN dim_diagnosis dd ON dd.DiagnosisID = pv.DiagnosisID
+GROUP BY pv.TreatmentID,
+         dt.TreatmentName,
+         pv.DiagnosisID,
+         dd.DiagnosisName
+HAVING percentage < 1
 ORDER BY combination ASC
 LIMIT 10;
 
